@@ -157,7 +157,8 @@ trait RealSoundCloudServiceComponent extends SoundCloudServiceComponent {
         case (artist, track :: tracksTail) => FavoriteArtist(id = track.user.id,
           username = artist,
           tracks = tracksTail.size + 1,
-        avatar_url = track.user.avatar_url)
+        avatar_url = track.user.avatar_url,
+        uri = track.user.uri)
       } toList
       val sorted = byTracks sortBy (_.tracks)
       sorted.reverse take 10

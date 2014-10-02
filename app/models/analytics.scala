@@ -12,7 +12,7 @@ object FavoritesSummary {
   implicit val format: Format[FavoritesSummary] = Json.format[FavoritesSummary]
 }
 
-case class FavoriteArtist(id: Long, username: String, tracks: Int, avatar_url: Option[String])
+case class FavoriteArtist(id: Long, username: String, tracks: Int, avatar_url: Option[String], uri: String)
 
 object FavoriteArtist {
   implicit val format: Format[FavoriteArtist] = Json.format[FavoriteArtist]

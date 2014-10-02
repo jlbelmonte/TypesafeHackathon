@@ -40,10 +40,10 @@ trait RealRecommendationServiceComponent extends RecommendationServiceComponent 
         myFollowingsToCheck = myFollowingsWithFavorites.sortBy(_.public_favorites_count).reverse.take(top)
         // step 1b get favorites for me
         myFavorites <- favoritesF
-        myArtists = (myFavorites map (_.user.username)).distinct
-        _ = println(s"Got ${myArtists.size} artists who have favorites")
+        myArtistIds = (myFavorites map (_.user.id)).distinct
+        _ = println(s"Got ${myArtistIds.size} artists in my favorites")
         theirFavorites <- soundCloudService.getFavoriteTracksBatch(myFollowingsToCheck map (_.id.toString))
-        allTracksFiltered = theirFavorites.values.toList.flatten.filterNot(track => myArtists.contains(track.user.username))
+        allTracksFiltered = theirFavorites.values.toList.flatten.filterNot(track => myArtistIds.contains(track.user.id))
         recommended = faveArtists(allTracksFiltered)
 
       } yield recommended
@@ -56,7 +56,8 @@ trait RealRecommendationServiceComponent extends RecommendationServiceComponent 
         case (artist, track :: tracksTail) => FavoriteArtist(id = track.user.id,
           username = artist,
           tracks = tracksTail.size + 1,
-          avatar_url = track.user.avatar_url)
+          avatar_url = track.user.avatar_url,
+        uri = track.user.uri)
       } toList
       val sorted = byTracks sortBy (_.tracks)
       sorted.reverse take 10
