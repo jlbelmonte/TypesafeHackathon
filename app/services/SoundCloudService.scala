@@ -77,17 +77,21 @@ trait RealSoundCloudServiceComponent extends SoundCloudServiceComponent {
     }
 
     override def getFollowings(id: String): Future[List[User]] = {
-      soundCloudRequest[List[User]](s"$BaseUrl/users/$id/followings.json")
+      val followedF = soundCloudRequest[List[User]](s"$BaseUrl/users/$id/followings.json")
+      val ids = followedF.map(s => for (f <- s) yield f.id.toString)
+      val allF = ids.flatMap(getAll(_))
+      for {
+        followed <- followedF
+        ids <- List(for (f <- followed) yield f.id.toString)
+        all <- getAll(ids)
+      } yield {
+        
+      }
     }
 
-
-    def getUser(id: String): Future[User] = {
-      soundCloudRequest[User](s"$BaseUrl/users/$id.json")
-    }
-
-    def getAll(ids: String*): Future[List[User]] = {
+    def getAll(ids: Seq[String]): Future[List[User]] = {
       def getChunk(uids: Seq[String]): Seq[Future[User]] = {
-        val result = for (uid <- uids) yield getUser(uid)
+        val result = for (uid <- uids) yield soundCloudRequest[User](s"$BaseUrl/users/$uid/following.json")
         // lets avoid getting banned
         Thread sleep 1000
         result
