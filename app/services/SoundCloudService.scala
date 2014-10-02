@@ -49,11 +49,10 @@ trait RealSoundCloudServiceComponent extends SoundCloudServiceComponent {
           }
           _ = println("page size " + page.size)
           rest <- page match {
-            case head :: tail if tail.size == limit - 1 => {
+            case head :: tail => {
               paginatedHelper(offset + limit, limit, soFar ++ page)
             }
             case Nil => sync(soFar)
-            case list => sync(soFar ++ list)
           }
         } yield rest
       }
