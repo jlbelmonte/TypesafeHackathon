@@ -118,7 +118,7 @@ trait RealSoundCloudServiceComponent extends SoundCloudServiceComponent {
     }
 
     override def getFavoriteTracksBatch(usernames: List[String]): Future[Map[String, List[Track]]] = {
-      val batched = usernames.grouped(1).toList
+      val batched = usernames.grouped(5).toList
       val traversed = Future.traverse(batched) { batch =>
 //        Thread.sleep(100L)
         getFavoriteTracksHelper(batch)

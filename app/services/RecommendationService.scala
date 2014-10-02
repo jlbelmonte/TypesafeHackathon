@@ -28,15 +28,18 @@ trait RealRecommendationServiceComponent extends RecommendationServiceComponent 
       // step 3b filter on ones I'm following
       // step 4 order by frequency
       // step 5 return top 10
+      // parallel
+      val followingsF =  soundCloudService.getFollowings(username)
+      val favoritesF = soundCloudService.getFavoriteTracks(username)
       for {
         // step 1 get following
-        myFollowings <- soundCloudService.getFollowings(username)
+        myFollowings <- followingsF
         // only consider those with likes
         myFollowingsWithFavorites = myFollowings filter (_.public_favorites_count.getOrElse(0) > 0)
         _ = println(s"Got ${myFollowingsWithFavorites.size} followings who have favorites")
         myFollowingsToCheck = myFollowingsWithFavorites.sortBy(_.public_favorites_count).reverse.take(top)
         // step 1b get favorites for me
-        myFavorites <- soundCloudService.getFavoriteTracks(username)
+        myFavorites <- favoritesF
         myArtists = (myFavorites map (_.user.username)).distinct
         _ = println(s"Got ${myArtists.size} artists who have favorites")
         theirFavorites <- soundCloudService.getFavoriteTracksBatch(myFollowingsToCheck map (_.id.toString))
