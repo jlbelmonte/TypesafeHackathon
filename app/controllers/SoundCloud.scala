@@ -15,7 +15,7 @@ object SoundCloud extends TypesafeController {
     cake.soundCloudService.getFavoriteTracks(username) 
   }
 
-  def follwing(username: String) = asyncAction() { implicit request =>
+  def following(username: String) = asyncAction() { implicit request =>
     cake.soundCloudService.getFollowings(username)
   }
 }

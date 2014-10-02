@@ -9,7 +9,9 @@ GET        /                                controllers.Application.index
 GET        /assets/*file                    controllers.Assets.at(path="/public", file)
 
 
-GET     /user/:username/favorites   controllers.SoundCloud.favorites(username: String)
-GET     /user/:username/favorites/summary   controllers.Favorites.favoritesSummary(username: String)
-GET     /user/:username/following        controllers.SoundCloud.follwing(username: String)
-GET     /user/:username/topfollowing        controllers.SoundCloud.follwing(username: String)
+GET     /user/:username/favorites               controllers.SoundCloud.favorites(username: String)
+GET     /user/:username/favorites/summary       controllers.Favorites.favoritesSummary(username: String)
+GET     /user/:username/following               controllers.SoundCloud.following(username: String)
+GET     /user/:username/topfollowing            controllers.SoundCloud.following(username: String)
+
+GET     /user/:username/recommend/favorites     controllers.Recommendations.favorites(username: String)

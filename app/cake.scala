@@ -1,5 +1,6 @@
 package nitroz
 
-import services.RealSoundCloudServiceComponent
+import services.{RealRecommendationServiceComponent, RealSoundCloudServiceComponent}
 
 object cake extends RealSoundCloudServiceComponent
+with RealRecommendationServiceComponent
