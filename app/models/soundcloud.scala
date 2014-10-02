@@ -11,7 +11,7 @@ case class UserSummary(id: Long,
                        kind: String,
                        permalink: String,
                        username: String,
-                       avatar_url: String,
+                       avatar_url: Option[String],
                        uri: String)
 
 object  UserSummary {

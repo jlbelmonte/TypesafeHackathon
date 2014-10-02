@@ -10,3 +10,4 @@ GET     /assets/*file               controllers.Assets.at(path="/public", file)
 
 
 GET     /user/:username/favorites   controllers.SoundCloud.favorites(username: String)
+GET     /user/:username/favorites/summary   controllers.Favorites.favoritesSummary(username: String)

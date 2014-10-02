@@ -1,8 +1,8 @@
 package services
 
-import models.Track
+import models.{FavoriteArtist, FavoritesSummary, Track}
 import play.api.Logger
-import play.api.libs.json.{JsError, JsSuccess, Json}
+import play.api.libs.json.{Reads, JsError, JsSuccess, Json}
 import play.api.libs.ws.WS
 
 import scala.concurrent.Future
@@ -24,7 +24,11 @@ trait SoundCloudServiceComponent {
   val soundCloudService: SoundCloudService
   trait SoundCloudService {
 
+    def soundCloudRequest[T: Reads](url: String): Future[T]
+
     def getFavoriteTracks(username: String): Future[List[Track]]
+
+    def getFavoritesSummary(username: String): Future[Option[FavoritesSummary]]
   }
 
 }
@@ -33,14 +37,11 @@ trait RealSoundCloudServiceComponent extends SoundCloudServiceComponent {
 
   lazy val soundCloudService = new SoundCloudService {
 
-    override def getFavoriteTracks(username: String): Future[List[Track]] = {
+    override def soundCloudRequest[T: Reads](url: String): Future[T] = {
       for {
-        response <- withUrl(s"$BaseUrl/users/$username/favorites.json").get()
-
+        response <- withUrl(url).get()
       } yield {
-        println(s"RESPONSE: \n${response.status}")
-        println(s"RESPONSE: \n${response.body}")
-        Json.fromJson[List[Track]](response.json) match {
+        Json.fromJson[T](response.json) match {
           case JsSuccess(value,_) => value
           case JsError(errors) =>
             println(s"Fail!!! \n${errors.mkString("\n")}")
@@ -48,5 +49,35 @@ trait RealSoundCloudServiceComponent extends SoundCloudServiceComponent {
         }
       }
     }
+
+    override def getFavoriteTracks(username: String): Future[List[Track]] = {
+      soundCloudRequest[List[Track]](s"$BaseUrl/users/$username/favorites.json")
+    }
+
+    def getFavoritesSummary(username: String): Future[Option[FavoritesSummary]] = {
+      for {
+        favorites <- getFavoriteTracks(username)
+      } yield {
+        //(id: Long, username: String, total: Int, topArtists: List[FavoriteArtist] )
+        Some(FavoritesSummary(
+          0L/*todo*/,
+          username = username,
+          totalFavorites = favorites.size /*todo*/,
+          topArtists =  faveArtists(favorites)))
+      }
+    }
+
+    private def faveArtists(tracks: List[Track]) = {
+      val byArtist = tracks.groupBy(_.user.username)
+      val byTracks = byArtist map {
+        case (artist, track :: tracksTail) => FavoriteArtist(id = track.user.id,
+          username = artist,
+          tracks = tracksTail.size + 1,
+        avatar_url = track.user.avatar_url)
+      } toList
+      val sorted = byTracks sortBy (_.tracks)
+      sorted.reverse take 10
+    }
+
   }
 }
