@@ -8,6 +8,7 @@ import play.api.libs.json.{Reads, JsError, JsSuccess, Json}
 import play.api.libs.ws.{WSRequestHolder, WSRequest, WS}
 
 import scala.concurrent.Future
+import scala.util.{Failure, Success, Try}
 
 /**
  * Created by gsilin on 10/2/14.
@@ -27,7 +28,8 @@ trait SoundCloudServiceComponent {
     def soundCloudRequest[T: Reads](req: WSRequestHolder): Future[T]
     def soundCloudRequest[T: Reads](url: String): Future[T]
 
-    def getFavoriteTracks(username: String): Future[List[Track]]
+    def getFavoriteTracks(username: String, paginate: Boolean = true): Future[List[Track]]
+    def getFavoriteTracksBatch(usernames: List[String]): Future[Map[String, List[Track]]]
 
     def getFavoritesSummary(username: String): Future[Option[FavoritesSummary]]
 
@@ -58,7 +60,7 @@ trait RealSoundCloudServiceComponent extends SoundCloudServiceComponent {
         } yield rest
       }
 
-      paginatedHelper(0, 50, Nil)
+      paginatedHelper(0, 200, Nil)
     }
 
 
@@ -68,11 +70,17 @@ trait RealSoundCloudServiceComponent extends SoundCloudServiceComponent {
         response <- req.get()
       } yield {
         println("Response: " + response.status)
-        Json.fromJson[T](response.json) match {
-          case JsSuccess(value, _) => value
-          case JsError(errors) =>
-            println(s"Fail!!! \n${errors.mkString("\n")}")
-            throw new Exception(s"Fail!!! \n${errors.mkString("\n")}")
+        Try {
+          Json.fromJson[T](response.json) match {
+            case JsSuccess(value, _) => value
+            case JsError(errors) =>
+              println(s"Fail!!! \n${errors.mkString("\n")}")
+              throw new Exception(s"Fail!!! \n${errors.mkString("\n")}")
+          }
+        } match {
+          case Success(value) => value
+          case Failure(e) => println(s"ERROR: ${e.getMessage}\n${response.body}")
+            throw e
         }
       }
     }
@@ -102,9 +110,33 @@ trait RealSoundCloudServiceComponent extends SoundCloudServiceComponent {
       Future.sequence(listOfSeq.foldLeft(List[Future[User]]()) { (l: List[Future[User]], s) => l ++ s.toList})
     }
 
-    override def getFavoriteTracks(username: String): Future[List[Track]] = {
-      paginated[Track](s"$BaseUrl/users/$username/favorites.json")
+    override def getFavoriteTracks(username: String, paginate: Boolean = true): Future[List[Track]] = {
+      if (paginate)
+        paginated[Track](s"$BaseUrl/users/$username/favorites.json")
+      else
+        soundCloudRequest[List[Track]](s"$BaseUrl/users/$username/favorites.json")
     }
+
+    override def getFavoriteTracksBatch(usernames: List[String]): Future[Map[String, List[Track]]] = {
+      val batched = usernames.grouped(1).toList
+      val traversed = Future.traverse(batched) { batch =>
+//        Thread.sleep(100L)
+        getFavoriteTracksHelper(batch)
+      }
+      traversed map { bs =>
+        bs.foldLeft(Map.empty[String, List[Track]])(_ ++ _)
+      }
+    }
+
+    private def getFavoriteTracksHelper(usernames: List[String]): Future[Map[String, List[Track]]] = {
+      val futures = usernames map { username =>
+          println(s"getting tracks for $username")
+//        Thread.sleep(50L)
+        getFavoriteTracks(username, paginate = false) map (tracks => username -> tracks)
+      }
+      Future.sequence(futures) map (_.toMap)
+    }
+
 
     def getFavoritesSummary(username: String): Future[Option[FavoritesSummary]] = {
       for {

@@ -14,4 +14,4 @@ GET     /user/:username/favorites/summary       controllers.Favorites.favoritesS
 GET     /user/:username/following               controllers.SoundCloud.following(username: String)
 GET     /user/:username/topfollowing            controllers.SoundCloud.followingFollowing(username: String)
 
-GET     /user/:username/recommend/favorites     controllers.Recommendations.favorites(username: String)
+GET     /user/:username/recommend/favorites     controllers.Recommendations.favorites(username: String, top: Option[Int])

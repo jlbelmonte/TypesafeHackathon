@@ -8,7 +8,7 @@ import nitroz.{cake, TypesafeController}
 object Recommendations extends TypesafeController {
 
 
-  def favorites(username: String) = asyncAction() { implicit request =>
-    cake.recommendationService.recommendFavorites(username)
+  def favorites(username: String, top: Option[Int]) = asyncAction() { implicit request =>
+    cake.recommendationService.recommendFavorites(username, top getOrElse 10)
   }
 }
