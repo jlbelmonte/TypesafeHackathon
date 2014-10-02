@@ -77,15 +77,11 @@ trait RealSoundCloudServiceComponent extends SoundCloudServiceComponent {
     }
 
     override def getFollowings(id: String): Future[List[User]] = {
-      val followedF = soundCloudRequest[List[User]](s"$BaseUrl/users/$id/followings.json")
-      val ids = followedF.map(s => for (f <- s) yield f.id.toString)
-      val allF = ids.flatMap(getAll(_))
       for {
-        followed <- followedF
-        ids <- List(for (f <- followed) yield f.id.toString)
-        all <- getAll(ids)
+        followed <- soundCloudRequest[List[User]](s"$BaseUrl/users/$id/followings.json")
+        all <- getAll(List(for (f <- followed) yield f.id.toString).flatten)
       } yield {
-        
+        all
       }
     }
 
