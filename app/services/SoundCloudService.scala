@@ -1,13 +1,12 @@
 package services
 
-import models.{FavoriteArtist, FavoritesSummary, Track}
-import play.api.Logger
-import play.api.libs.json.{Reads, JsError, JsSuccess, Json}
+import models.{FavoriteArtist, FavoritesSummary, Track, User}
+import nitroz.futures._
+import play.api.Play.current
+import play.api.libs.json.{JsError, JsSuccess, Json, Reads}
 import play.api.libs.ws.WS
 
 import scala.concurrent.Future
-import nitroz.futures._
-import play.api.Play.current
 
 /**
  * Created by gsilin on 10/2/14.
@@ -29,6 +28,8 @@ trait SoundCloudServiceComponent {
     def getFavoriteTracks(username: String): Future[List[Track]]
 
     def getFavoritesSummary(username: String): Future[Option[FavoritesSummary]]
+
+    def getFollowings(id: String): Future[List[User]]
   }
 
 }
@@ -41,13 +42,37 @@ trait RealSoundCloudServiceComponent extends SoundCloudServiceComponent {
       for {
         response <- withUrl(url).get()
       } yield {
+
+        println(s"RESPONSE: \n${response.status}")
+        println(s"RESPONSE: \n${response.body}")
         Json.fromJson[T](response.json) match {
-          case JsSuccess(value,_) => value
+          case JsSuccess(value, _) => value
           case JsError(errors) =>
             println(s"Fail!!! \n${errors.mkString("\n")}")
-            throw new Exception(s"Fail!!! \n${errors.mkString("\n")}"  )
+            throw new Exception(s"Fail!!! \n${errors.mkString("\n")}")
         }
       }
+    }
+
+    override def getFollowings(id: String): Future[List[User]] = {
+      soundCloudRequest[List[User]](s"$BaseUrl/users/$id/followings.json")
+    }
+
+
+    def getUser(id: String): Future[User] = {
+      soundCloudRequest[User](s"$BaseUrl/users/$id.json")
+    }
+
+    def getAll(ids: String*): Future[List[User]] = {
+      def getChunk(uids: Seq[String]): Seq[Future[User]] = {
+        val result = for (uid <- uids) yield getUser(uid)
+        // lets avoid getting banned
+        Thread sleep 1000
+        result
+      }
+      val groups = ids.grouped(5).toList
+      val listOfSeq = for (g <- groups) yield (getChunk(g))
+      Future.sequence(listOfSeq.foldLeft(List[Future[User]]()) { (l: List[Future[User]], s) => l ++ s.toList})
     }
 
     override def getFavoriteTracks(username: String): Future[List[Track]] = {
@@ -80,4 +105,5 @@ trait RealSoundCloudServiceComponent extends SoundCloudServiceComponent {
     }
 
   }
+
 }

@@ -25,6 +25,43 @@ case class Track(
 object  Track {
   implicit val format: Format[Track] = Json.format[Track]
 }
+
+/*
+* {
+id: 887204,
+kind: "user",
+permalink: "greg-s-1",
+username: "greg s",
+last_modified: "2014/04/09 17:40:45 +0000",
+uri: "https://api.soundcloud.com/users/887204",
+permalink_url: "http://soundcloud.com/greg-s-1",
+avatar_url: "https://i1.sndcdn.com/avatars-000007898111-4fipl3-large.jpg?86347b7",
+country: "United States",
+first_name: "greg",
+last_name: "silin",
+full_name: "greg silin",
+description: null,
+city: "San Francisco",
+discogs_name: null,
+myspace_name: null,
+website: null,
+website_title: null,
+online: false,
+track_count: 0,
+playlist_count: 9,
+plan: "Free",
+public_favorites_count: 774,
+followers_count: 119,
+followings_count: 497,
+subscriptions: [ ]
+}*/
+case class User(id: Long, kind: String, username: String, permalink_url: String, avatar_url:String)
+
+object User {
+  implicit val format: Format[User] = Json.format[User]
+}
+
+
 /*
 {
 "kind": "track",
