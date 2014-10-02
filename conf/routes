@@ -3,7 +3,6 @@
 # ~~~~
 
 # Home page
-GET        /                                controllers.Application.index
 
 # Map static resources from the /public folder to the /assets URL path
 GET        /assets/*file                    controllers.Assets.at(path="/public", file)
@@ -13,5 +12,6 @@ GET     /user/:username/favorites               controllers.SoundCloud.favorites
 GET     /user/:username/favorites/summary       controllers.Favorites.favoritesSummary(username: String)
 GET     /user/:username/following               controllers.SoundCloud.following(username: String)
 GET     /user/:username/topfollowing            controllers.SoundCloud.followingFollowing(username: String)
+GET     /user/:username/topfollowingV            controllers.SoundCloud.followingFollowing2(username: String)
 
 GET     /user/:username/recommend/favorites     controllers.Recommendations.favorites(username: String, top: Option[Int])

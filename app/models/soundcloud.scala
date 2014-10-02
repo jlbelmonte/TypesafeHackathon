@@ -55,7 +55,7 @@ followers_count: 119,
 followings_count: 497,
 subscriptions: [ ]
 }*/
-case class User(id: Long, kind: String, username: String, permalink_url: String, avatar_url:String, public_favorites_count: Option[Int])
+case class User(id: Long, kind: String, username: String, permalink_url: String, avatar_url:String, public_favorites_count: Option[Int], fullname: Option[String], description:Option[String])
 
 object User {
   implicit val format: Format[User] = Json.format[User]

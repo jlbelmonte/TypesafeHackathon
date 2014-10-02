@@ -1,22 +1,33 @@
-@(title: String)(content: Html)
+@(title: String, list: List[models.User])
 
 <!DOCTYPE html>
 
 <html>
     <head>
-        <title>@title</title>
+        <title>title</title>
         <link rel="stylesheet" media="screen" href="@routes.Assets.at("stylesheets/bootstrap.css")">
         <link rel="shortcut icon" type="image/png" href="@routes.Assets.at("images/favicon.png")">
         <script src="@routes.Assets.at("javascripts/bootstrap.min.js")" type="text/javascript"></script>
     </head>
     <body>
+
         <div class="bs-docs-header" id="content">
             <div class="container">
-                <h1>Getting started</h1>
-                <p>An overview of Bootstrap, how to download and use, basic templates and examples, and more.</p>
+
                 <div id="carbonads-container"><div class="carbonad"><div id="azcarbon"></div><script>var z = document.createElement("script"); z.async = true; z.src = "http://engine.carbonads.com/z/32341/azcarbon_2_1_0_HORIZ"; var s = document.getElementsByTagName("script")[0]; s.parentNode.insertBefore(z, s);</script></div></div>
 
             </div>
+        </div>
+        <div>
+            <ul>
+            @for(user<-list){
+                <li>
+                    <img src="@user.avatar_url">
+                    <h3><a href="@user.permalink_url"> @user.fullname</a></h3>
+                    <p>@user.description</p>
+                </li>
+            }
+            </ul>
         </div>
     </body>
 </html>
