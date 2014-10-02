@@ -1,6 +1,8 @@
 package services
 
+
 import nitroz.futures._
+import play.api.Logger
 import play.api.Play.current
 import play.api.libs.json.{JsError, JsSuccess, Json, Reads}
 import models.{FavoriteArtist, FavoritesSummary, Track, User}
@@ -94,31 +96,33 @@ trait RealSoundCloudServiceComponent extends SoundCloudServiceComponent {
         followed <- getFollowings(id)
         all <- getAll(List(for (f <- followed) yield f.id.toString).flatten)
       } yield {
-        val count: Map[User, Int] = followed.foldRight(Map[User, Int]()) ((user, acc) => {
-          if (followed.contains(user)) {
+        val dontShow = followed.map(_.id)
+        val count: Map[User, Int] = all.foldRight(Map[User, Int]())((user, acc) => {
+          if (dontShow.contains(user.id)) {
             acc
           } else {
             acc.get(user) match {
-              case Some(i) =>  acc + (user -> (1+i))
-              case _ =>  acc + (user -> 1)
+              case Some(i) => acc + (user -> (1 + i))
+              case _ => acc + (user -> 1)
             }
           }
         })
         val ordered = count.toList.sortBy(_._2).reverse
-        ordered.take(10).unzip._1
+        val res= ordered.take(20)
+        res.map(tuple => Logger.info(tuple.toString()))
+        res.unzip._1.sortBy(u => u.public_favorites_count).reverse
       }
     }
 
     def getAll(ids: Seq[String]): Future[List[User]] = {
-      def getChunk(uids: Seq[String]): Seq[Future[User]] = {
-        val result = for (uid <- uids) yield soundCloudRequest[User](s"$BaseUrl/users/$uid/following.json")
+      def getChunk(uids: Seq[String]): Seq[Future[List[User]]] = {
+        val result = for (uid <- uids) yield getFollowings(uid)
         // lets avoid getting banned
-        Thread sleep 1000
         result
       }
-      val groups = ids.grouped(5).toList
+      val groups = ids.grouped(10).toList
       val listOfSeq = for (g <- groups) yield (getChunk(g))
-      Future.sequence(listOfSeq.foldLeft(List[Future[User]]()) { (l: List[Future[User]], s) => l ++ s.toList})
+      Future.sequence(listOfSeq.flatten.toList) map( l => l.flatten)
     }
 
     override def getFavoriteTracks(username: String, paginate: Boolean = true): Future[List[Track]] = {
@@ -174,8 +178,5 @@ trait RealSoundCloudServiceComponent extends SoundCloudServiceComponent {
       val sorted = byTracks sortBy (_.tracks)
       sorted.reverse take 10
     }
-
   }
-
-
 }
