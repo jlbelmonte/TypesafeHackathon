@@ -32,6 +32,7 @@ trait SoundCloudServiceComponent {
     def getFavoritesSummary(username: String): Future[Option[FavoritesSummary]]
 
     def getFollowings(id: String): Future[List[User]]
+    def getFollowingsFollowings(id: String): Future[List[User]]
   }
 
 }
@@ -77,8 +78,12 @@ trait RealSoundCloudServiceComponent extends SoundCloudServiceComponent {
     }
 
     override def getFollowings(id: String): Future[List[User]] = {
+      paginated[User](s"$BaseUrl/users/$id/followings.json")
+    }
+
+    override def getFollowingsFollowings(id: String): Future[List[User]] = {
       for {
-        followed <- soundCloudRequest[List[User]](s"$BaseUrl/users/$id/followings.json")
+        followed <- getFollowings(id)
         all <- getAll(List(for (f <- followed) yield f.id.toString).flatten)
       } yield {
         all
