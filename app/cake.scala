@@ -1,0 +1,5 @@
+package nitroz
+
+import services.RealSoundCloudServiceComponent
+
+object cake extends RealSoundCloudServiceComponent
