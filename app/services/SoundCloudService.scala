@@ -94,7 +94,18 @@ trait RealSoundCloudServiceComponent extends SoundCloudServiceComponent {
         followed <- getFollowings(id)
         all <- getAll(List(for (f <- followed) yield f.id.toString).flatten)
       } yield {
-        all
+        val count: Map[User, Int] = followed.foldRight(Map[User, Int]()) ((user, acc) => {
+          if (followed.contains(user)) {
+            acc
+          } else {
+            acc.get(user) match {
+              case Some(i) =>  acc + (user -> (1+i))
+              case _ =>  acc + (user -> 1)
+            }
+          }
+        })
+        val ordered = count.toList.sortBy(_._2).reverse
+        ordered.take(10).unzip._1
       }
     }
 
@@ -165,5 +176,6 @@ trait RealSoundCloudServiceComponent extends SoundCloudServiceComponent {
     }
 
   }
+
 
 }
