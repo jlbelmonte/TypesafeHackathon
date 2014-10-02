@@ -1,10 +1,11 @@
 package services
 
-import models.{FavoriteArtist, FavoritesSummary, Track, User}
 import nitroz.futures._
 import play.api.Play.current
 import play.api.libs.json.{JsError, JsSuccess, Json, Reads}
-import play.api.libs.ws.WS
+import models.{FavoriteArtist, FavoritesSummary, Track, User}
+import play.api.libs.json.{Reads, JsError, JsSuccess, Json}
+import play.api.libs.ws.{WSRequestHolder, WSRequest, WS}
 
 import scala.concurrent.Future
 
@@ -23,6 +24,7 @@ trait SoundCloudServiceComponent {
   val soundCloudService: SoundCloudService
   trait SoundCloudService {
 
+    def soundCloudRequest[T: Reads](req: WSRequestHolder): Future[T]
     def soundCloudRequest[T: Reads](url: String): Future[T]
 
     def getFavoriteTracks(username: String): Future[List[Track]]
@@ -38,13 +40,34 @@ trait RealSoundCloudServiceComponent extends SoundCloudServiceComponent {
 
   lazy val soundCloudService = new SoundCloudService {
 
-    override def soundCloudRequest[T: Reads](url: String): Future[T] = {
-      for {
-        response <- withUrl(url).get()
-      } yield {
+    def paginated[T: Reads](url: String): Future[List[T]] = {
+      def paginatedHelper(offset: Int, limit: Int, soFar: List[T]): Future[List[T]] = {
+        for {
+          page <- {
+            println(s"Geting offset $offset limit $limit so far ${soFar.size}")
+            soundCloudRequest[List[T]](withUrl(url).withQueryString("limit" -> limit.toString, "offset" -> offset.toString))
+          }
+          _ = println("page size " + page.size)
+          rest <- page match {
+            case head :: tail if tail.size == limit - 1 => {
+              paginatedHelper(offset + limit, limit, soFar ++ page)
+            }
+            case Nil => sync(soFar)
+            case list => sync(soFar ++ list)
+          }
+        } yield rest
+      }
 
-        println(s"RESPONSE: \n${response.status}")
-        println(s"RESPONSE: \n${response.body}")
+      paginatedHelper(0, 50, Nil)
+    }
+
+
+    override def soundCloudRequest[T: Reads](url: String) = soundCloudRequest(withUrl(url))
+    override def soundCloudRequest[T: Reads](req: WSRequestHolder): Future[T] = {
+      for {
+        response <- req.get()
+      } yield {
+        println("Response: " + response.status)
         Json.fromJson[T](response.json) match {
           case JsSuccess(value, _) => value
           case JsError(errors) =>
@@ -76,7 +99,7 @@ trait RealSoundCloudServiceComponent extends SoundCloudServiceComponent {
     }
 
     override def getFavoriteTracks(username: String): Future[List[Track]] = {
-      soundCloudRequest[List[Track]](s"$BaseUrl/users/$username/favorites.json")
+      paginated[Track](s"$BaseUrl/users/$username/favorites.json")
     }
 
     def getFavoritesSummary(username: String): Future[Option[FavoritesSummary]] = {
